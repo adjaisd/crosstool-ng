@@ -39,14 +39,6 @@ jobs:
           # a Segmentation fault
           - {host: "macos-12", sample: "x86_64-w64-mingw32,x86_64-pc-linux-gnu"}
     steps:
-      - name: create case sensitive workspace volume for macOS
-        if: ${{ runner.os == 'macOS' }}
-        run: |
-          cd ..
-          rmdir crosstool-ng
-          hdiutil create "${HOME}/Workspace.sparseimage" -volname crosstool-ng -type SPARSE -size 20g -fs HFSX
-          hdiutil mount "${HOME}/Workspace.sparseimage" -mountroot /Users/runner/work/crosstool-ng
-          cd crosstool-ng
       - name: download ct-ng
         uses: actions/download-artifact@v4
         with:
@@ -67,12 +59,6 @@ jobs:
         if: ${{ runner.os == 'Linux' }}
         run: |
           sudo apt-get update && sudo apt-get install -y bison flex gperf help2man libtool-bin meson ninja-build texinfo
-          echo "${{ github.workspace }}/.local/bin" >> "$GITHUB_PATH"
-      - name: prereq macOS
-        if: ${{ runner.os == 'macOS' }}
-        run: |
-          brew install autoconf automake bash binutils gawk gnu-sed \
-               gnu-tar help2man make ncurses pkg-config texinfo libtool
           echo "${{ github.workspace }}/.local/bin" >> "$GITHUB_PATH"
       - name: download x86_64-w64-mingw32.${{ matrix.host }} tarball
         if: ${{ inputs.canadian-cross }}
@@ -97,12 +83,10 @@ jobs:
           test ${{ matrix.host }} = "macos-12" && sed -i -e '/CT_GDB_CROSS_PYTHON/s/y$/n/' .config
           ct-ng build
       - name: create ${{ matrix.sample }}.${{ matrix.host }} tarball
-        if: ${{ matrix.sample == 'x86_64-w64-mingw32' }}
         run: |
           tar -C ${{ github.workspace }}/x-tools/${{ matrix.sample }} \
               -cf ${{ matrix.sample }}.${{ matrix.host }}.tar .
       - name: upload ${{ matrix.sample }}.${{ matrix.host }} tarball
-        if: ${{ matrix.sample == 'x86_64-w64-mingw32' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.sample }}.${{ matrix.host }}.tar
